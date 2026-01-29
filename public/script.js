@@ -3,6 +3,13 @@ const form = document.getElementById('contactForm');
 form.addEventListener('submit', async (e) => {
     e.preventDefault();
 
+    const submitBtn = form.querySelector('button[type="submit"]');
+    const originalText = submitBtn.innerText; 
+
+    submitBtn.disabled = true;
+    submitBtn.innerText = 'Sending...';
+    
+
     const data = {
         name: document.getElementById('name').value,
         email: document.getElementById('email').value,
@@ -28,4 +35,7 @@ form.addEventListener('submit', async (e) => {
     } catch (err) {
         alert('Server connection failed.');
     }
+
+    submitBtn.disabled = false;
+    submitBtn.innerText = originalText;
 });

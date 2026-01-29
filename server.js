@@ -36,9 +36,9 @@ app.post('/api/contact', limiter, async (req, res) => {
 
     try {
         if (isPostgres) {
-            // Cloud (Postgres)
+            
             const sql = `INSERT INTO contacts (name, email, message, date) VALUES ($1, $2, $3, $4) RETURNING id`;
-            // Note: We use a callback here to keep it compatible with your existing setup
+
             await new Promise((resolve, reject) => {
                 db.query(sql, [name, email, message, now], (err, result) => {
                     if (err) reject(err);
