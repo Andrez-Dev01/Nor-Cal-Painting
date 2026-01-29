@@ -6,17 +6,14 @@ const nodemailer = require('nodemailer');
 const { db, isPostgres } = require('./database');
 
 
-const contactLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000, 
-    max: 5,
-});
+
 const app = express();
 const port = process.env.PORT || 3000;
 
 app.use(cors());
 app.use(express.json());
 app.use(express.static('public'));
-app.use('/api/contact', contactLimiter);
+
 
 console.log('isPostgres:', isPostgres)
 
