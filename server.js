@@ -4,7 +4,7 @@ const cors = require('cors');
 const rateLimit = require('express-rate-limit');
 const nodemailer = require('nodemailer');
 const { db, isPostgres } = require('./database');
-const rateLimit = require('express-rate-limit');
+
 
 const contactLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, 
