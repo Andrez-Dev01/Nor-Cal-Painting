@@ -1,11 +1,28 @@
 node_modules/
 
+# Environment variables
 .env
+.env.local
+.env.production
+.env.development
+.env.test
+.env.*
 
+# Database files
 *.db
 *.sqlite
 contacts.db
 
-*log
+# Log files
+*.log
+*.log.*
+
+# OS files
 .DS_Store
+
+# SSL certificates and keys (if used)
+*.pem
+*.key
+*.crt
+*.cert
 
