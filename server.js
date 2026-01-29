@@ -2,15 +2,23 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const rateLimit = require('express-rate-limit');
-const nodemailer = require('nodemailer'); // <--- NEW IMPORT
+const nodemailer = require('nodemailer');
 const { db, isPostgres } = require('./database');
+const rateLimit = require('express-rate-limit');
 
+const contactLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, 
+    max: 5,
+});
 const app = express();
 const port = process.env.PORT || 3000;
 
 app.use(cors());
 app.use(express.json());
-app.use(express.static('public')); // Serves your HTML/CSS
+app.use(express.static('public'));
+app.use('/api/contact', contactLimiter);
+
+console.log('isPostgres:', isPostgres)
 
 const transporter = nodemailer.createTransport({
     service: 'gmail',
