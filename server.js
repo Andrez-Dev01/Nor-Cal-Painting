@@ -64,7 +64,7 @@ app.post('/api/contact', limiter, async (req, res) => {
 
         await transporter.sendMail({
             from: process.env.EMAIL_USER,
-            to: process.env.EMAIL_USER,
+            to: process.env.EMAIL_OWNER,
             subject: `New Lead: ${name}`,
             text: `You have a new message from your website!\n\nName: ${name}\nEmail: ${email}\nMessage: ${message}`
         });
