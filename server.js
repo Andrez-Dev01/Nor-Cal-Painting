@@ -2,15 +2,23 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const rateLimit = require('express-rate-limit');
-const { db, isPostgres } = require('./database'); // 
+const nodemailer = require('nodemailer'); // <--- NEW IMPORT
+const { db, isPostgres } = require('./database');
 
 const app = express();
 const port = process.env.PORT || 3000;
 
 app.use(cors());
 app.use(express.json());
-app.use(express.static('public'));
+app.use(express.static('public')); // Serves your HTML/CSS
 
+const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS
+    }
+});
 
 const limiter = rateLimit({
     windowMs: 15 * 60 * 1000, 
@@ -18,39 +26,63 @@ const limiter = rateLimit({
     message: "Too many attempts from this IP, please try again later."
 });
 
-
-app.post('/api/contact', limiter, (req, res) => {
+app.post('/api/contact', limiter, async (req, res) => {
     const { name, email, message, bot_check } = req.body;
 
-    if (bot_check && bot_check.length > 0) {
-        return res.status(200).json({ message: 'Message sent!' });
-    }
-
-    if (!name || !email || !message) {
-        return res.status(400).json({ error: 'All fields are required' });
-    }
+    if (bot_check && bot_check.length > 0) return res.status(200).json({ message: 'Message sent!' });
+    if (!name || !email || !message) return res.status(400).json({ error: 'All fields are required' });
 
     const now = new Date().toISOString();
 
-    if (isPostgres) {
+    try {
+        if (isPostgres) {
+            // Cloud (Postgres)
+            const sql = `INSERT INTO contacts (name, email, message, date) VALUES ($1, $2, $3, $4) RETURNING id`;
+            // Note: We use a callback here to keep it compatible with your existing setup
+            await new Promise((resolve, reject) => {
+                db.query(sql, [name, email, message, now], (err, result) => {
+                    if (err) reject(err);
+                    else resolve(result);
+                });
+            });
+        } else {
 
-        const sql = `INSERT INTO contacts (name, email, message, date) VALUES ($1, $2, $3, $4) RETURNING id`;
-        
-        db.query(sql, [name, email, message, now], (err, result) => {
-            if (err) return res.status(500).json({ error: err.message });
-            
-            res.json({ message: 'Message received (Cloud)!', id: result.rows[0].id });
+            const sql = `INSERT INTO contacts (name, email, message, date) VALUES (?, ?, ?, ?)`;
+            await new Promise((resolve, reject) => {
+                db.run(sql, [name, email, message, now], function(err) {
+                    if (err) reject(err);
+                    else resolve(this.lastID);
+                });
+            });
+        }
+    } catch (err) {
+        console.error("Database Error:", err);
+        return res.status(500).json({ error: "Failed to save message to database." });
+    }
+
+    try {
+
+        await transporter.sendMail({
+            from: process.env.EMAIL_USER,
+            to: process.env.EMAIL_USER,
+            subject: `New Lead: ${name}`,
+            text: `You have a new message from your website!\n\nName: ${name}\nEmail: ${email}\nMessage: ${message}`
         });
 
-    } else {
 
-        const sql = `INSERT INTO contacts (name, email, message, date) VALUES (?, ?, ?, ?)`;
-        
-        db.run(sql, [name, email, message, now], function(err) {
-            if (err) return res.status(500).json({ error: err.message });
-            
-            res.json({ message: 'Message received (Local)!', id: this.lastID });
+        await transporter.sendMail({
+            from: process.env.EMAIL_USER,
+            to: email,
+            subject: "Thanks for contacting us!",
+            text: `Hi ${name},\n\nThanks for reaching out! We received your message and will get back to you shortly.\n\nBest,\nThe Team`
         });
+
+        console.log("Emails sent successfully!");
+        res.json({ message: 'Message received and emails sent!' });
+
+    } catch (emailErr) {
+        console.error("Email Error:", emailErr);
+        res.json({ message: 'Message received!' });
     }
 });
 
