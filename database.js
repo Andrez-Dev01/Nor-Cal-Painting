@@ -12,7 +12,7 @@ if (process.env.DATABASE_URL) {
     
     db = new Pool({
         connectionString: process.env.DATABASE_URL,
-        ssl: { rejectUnauthorized: false } // Required for Neon
+        ssl: { rejectUnauthorized: false }
     });
 
 
