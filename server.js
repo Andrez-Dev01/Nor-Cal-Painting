@@ -67,20 +67,20 @@ app.post('/api/contact', limiter, async (req, res) => {
 
     try {
 
-        await transporter.sendMail({
+        transporter.sendMail({
             from: process.env.EMAIL_USER,
             to: process.env.EMAIL_OWNER,
             subject: `New Lead: ${name}`,
             text: `You have a new message from your website!\n\nName: ${name}\nEmail: ${email}\nMessage: ${message}`
-        });
+        }).catch(err => console.error(err));
 
 
-        await transporter.sendMail({
+        transporter.sendMail({
             from: process.env.EMAIL_USER,
             to: email,
             subject: "Thanks for contacting us!",
             text: `Hi ${name},\n\nThanks for reaching out! We received your message and will get back to you shortly.\n\nBest,\nThe Team`
-        });
+        }).catch(err => console.error(err));
 
         console.log("Emails sent successfully!");
         res.json({ message: 'Message received and emails sent!' });
